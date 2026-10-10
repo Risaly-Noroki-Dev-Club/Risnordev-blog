@@ -18,13 +18,6 @@ const postsDir = join(contentDir, "posts")
 const mediaDir = join(contentDir, "media")
 const publicDir = join(root, "public")
 
-await rm(publicDir, { recursive: true, force: true })
-await mkdir(publicDir, { recursive: true })
-await mkdir(join(publicDir, "posts"), { recursive: true })
-await mkdir(join(publicDir, "tags"), { recursive: true })
-await mkdir(join(publicDir, "categories"), { recursive: true })
-await mkdir(join(publicDir, "archives"), { recursive: true })
-
 const postSources = await collectPostSources()
 const posts = []
 for (const source of postSources) {
@@ -63,6 +56,14 @@ const archiveGroups = groupPostsByYear(posts)
 const indexRaw = existsSync(join(contentDir, "index.md")) ? localize(await readFile(join(contentDir, "index.md"), "utf8")) : `# ${text.homeHeading}\n\n${text.homeIntro}`
 const aboutRaw = existsSync(join(contentDir, "about.md")) ? localize(await readFile(join(contentDir, "about.md"), "utf8")) : text.aboutBody
 const guestbookRaw = existsSync(join(contentDir, "guestbook.md")) ? localize(await readFile(join(contentDir, "guestbook.md"), "utf8")) : text.guestbookBody
+
+// Read and validate the language pack and source pages before replacing output.
+await rm(publicDir, { recursive: true, force: true })
+await mkdir(publicDir, { recursive: true })
+await mkdir(join(publicDir, "posts"), { recursive: true })
+await mkdir(join(publicDir, "tags"), { recursive: true })
+await mkdir(join(publicDir, "categories"), { recursive: true })
+await mkdir(join(publicDir, "archives"), { recursive: true })
 
 await writeHtml(join(publicDir, "index.html"), renderHome(indexRaw, posts, tagsMap))
 await writeHtml(join(publicDir, "posts", "index.html"), renderPostsIndex(posts))

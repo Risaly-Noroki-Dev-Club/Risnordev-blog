@@ -13,6 +13,7 @@ if (!/^\/[a-zA-Z0-9_./-]+$/.test(remoteRoot) || posix.normalize(remoteRoot) === 
 }
 if (!/^\d+$/.test(port) || Number(port) < 1 || Number(port) > 65535) throw new Error("Invalid SSH port")
 const ssh = ["-p", port, remote]
+await run(process.env.NPM_PATH || "npm", ["run", "build"], { cwd: root })
 await run("ssh", [...ssh, `mkdir -p '${remoteRoot}'`])
 await run("rsync", [
   "-az", "--delete", "--exclude=.git/", "--exclude=public/", "--exclude=node_modules/",
@@ -22,9 +23,9 @@ await run("rsync", [
 await run("ssh", [...ssh, `cd '${remoteRoot}' && npm run build`])
 console.log("rsync completed and the remote site was rebuilt.")
 
-function run(command, args) {
+function run(command, args, options = {}) {
   return new Promise((resolve, reject) => {
-    const child = spawn(command, args, { stdio: "inherit" })
+    const child = spawn(command, args, { stdio: "inherit", ...options })
     child.on("exit", code => code === 0 ? resolve() : reject(new Error(`${command} exited with code ${code}`)))
     child.on("error", reject)
   })

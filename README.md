@@ -53,6 +53,10 @@ public/              自动生成的站点
 
 编辑 `locales/zh-CN.mjs`，保留字段名，替换字段值。语言包使用 JavaScript 对象；文字中的换行可以用 `\n`，多行 Markdown 也可以改成反引号包裹的模板字符串。
 
+语言包已经按页面和功能分组，首页、关于页和留言页正文使用可直接换行的模板字符串。编辑这些段落时保留两侧反引号；正文需要写反引号或字面量 `${` 时，分别写成 `` \` `` 和 `\${`。
+
+构建前会检查全部必需字段及类型、`brandLines` 数组、数量与分类占位符，以及页面引用的语言字段。校验失败时显示具体字段名，并保留现有 `public/` 页面。JavaScript 语法错误也会在替换构建目录前停止。
+
 | 字段或字段组 | 用途 |
 | --- | --- |
 | `siteTitle`、`siteDescription` | 站点名称、页面默认简介与订阅信息 |
@@ -158,13 +162,38 @@ npm run publish
 
 发布依次执行：
 
-1. 通过 SSH 创建远程博客目录。
-2. 使用 `rsync -az --delete` 同步项目源文件，包括文章、图片、语言包、配置、样式和脚本。
-3. 同步成功后通过 SSH 在远程目录执行 `npm run build`。
+1. 在本地运行 `npm run build`，验证语言包、配置和页面内容；失败时不会同步服务器。
+2. 通过 SSH 创建远程博客目录。
+3. 使用 `rsync -az --delete` 同步项目源文件，包括文章、图片、语言包、配置、样式和脚本。
+4. 同步成功后通过 SSH 在远程目录执行 `npm run build`。
 
 同步会让远程源文件与本地一致，包括删除本地已删除的文章。远程目录应仅存放该博客项目；服务配置等文件放在目录之外。`.git/`、`public/`、`node_modules/`、`.DS_Store`、`.env*`、日志及旧构建触发文件会被排除；远程 `public/` 由远程构建重建。脚本遇到失败会停止，失败信息直接显示在终端。
 
 环境变量由当前终端传入，脚本不自动读取 `.env`。同步和构建过程中站点可能短暂不可用。
+
+## 编辑 risnordev.org 的日常流程
+
+这个博客本身也使用上述语言包。首页介绍编辑 `homeHeading` 与 `homeIntro`，关于页编辑 `aboutBody`，留言页编辑 `guestbookBody`。这些字段修改后，三个页面中的语言占位符会在构建时自动展开。
+
+本地检查效果：
+
+```bash
+npm run build
+npm run serve
+```
+
+在浏览器访问 <http://127.0.0.1:2201>，确认效果后，在当前终端设置原博客的部署地址并发布：
+
+```bash
+export BLOG_REMOTE=erika@server.risnordev.org
+export BLOG_REMOTE_ROOT=/home/erika/risnordev-blog
+export BLOG_REMOTE_PORT=2222
+npm run publish
+```
+
+环境变量在该终端中保持有效，后续修改直接运行 `npm run publish` 即可；新开终端时重新设置。使用模板搭建其他站点时，将这些值换成自己的服务器地址。
+
+服务器更新静态页面后，通常无需重启服务。替换 `scripts/serve.mjs` 时，需要在服务器执行 `systemctl --user restart risnordev-blog.service`。线上内容统一通过本地 rsync 发布，旧 WebDAV 服务和内容变化自动重建监控应停用，避免与发布过程同时写入或构建。
 
 ## 服务器部署
 
