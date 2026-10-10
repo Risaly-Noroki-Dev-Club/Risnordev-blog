@@ -116,7 +116,13 @@ await writeFile(join(publicDir, "assets", "language.js"), `window.blogLanguage =
 if (existsSync(mediaDir)) await cp(mediaDir, join(publicDir, "media"), { recursive: true, filter: path => !path.endsWith(".DS_Store") })
 
 async function collectPostSources() {
-  const entries = await readdir(postsDir, { withFileTypes: true })
+  let entries
+  try {
+    entries = await readdir(postsDir, { withFileTypes: true })
+  } catch (error) {
+    if (error.code === "ENOENT") return []
+    throw error
+  }
   const sources = []
 
   for (const entry of entries) {
@@ -436,7 +442,7 @@ function renderArchives(groups) {
           <div class="timeline-year">
             <h2>${escapeHtml(year)}</h2>
             <div class="post-list compact-post-list">${posts.map(renderPostCard).join("")}</div>
-          </div>`).join("")}
+          </div>`).join("") || `<p class="empty">${escapeHtml(text.emptyPosts)}</p>`}
       </section>
     </main>
   `, "archive-page", "archives")
@@ -613,6 +619,7 @@ function articleHeadExtra(post) {
 }
 
 function renderContactBlock() {
+  if (!site.contacts.length) return ""
   return `
     <section class="contact-block" aria-labelledby="contact-title">
       <p class="eyebrow">${escapeHtml(text.contactEyebrow)}</p>
