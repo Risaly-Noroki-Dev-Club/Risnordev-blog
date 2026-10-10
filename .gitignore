@@ -1,0 +1,8 @@
+.DS_Store
+public/
+node_modules/
+.env
+.env.*
+!.env.example
+content/.publish-trigger
+*.log
